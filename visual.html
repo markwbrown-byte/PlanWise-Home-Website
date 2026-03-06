@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renovation Constellation v2</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --green: #10b981;
+      --green-bg: rgba(16, 185, 129, 0.2);
+      --teal: #14b8a6;
+      --teal-bg: rgba(20, 184, 166, 0.2);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.2);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.2);
+      --blue: #3b82f6;
+      --blue-bg: rgba(59, 130, 246, 0.25);
+      --gray: #4b5563;
+      --gray-bg: rgba(75, 85, 99, 0.3);
+      --font: 'Inter', -apple-system, sans-serif;
+    }
+    html, body, #root { height: 100%; width: 100%; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
+    
+    .app { display: grid; grid-template-columns: 1fr 380px; height: 100vh; }
+    
+    .constellation-area {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    .constellation-svg { width: 100%; height: 100%; }
+    
+    /* Nodes */
+    .node { cursor: pointer; transition: opacity 0.15s; }
+    .node.dimmed { opacity: 0.25; }
+    .node:hover { filter: brightness(1.2); }
+    
+    .node-label {
+      font-size: 10px;
+      font-weight: 600;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .node-label.inside { font-size: 12px; }
+    
+    .goal-label { font-size: 14px; font-weight: 700; fill: var(--text); }
+    
+    /* Edges */
+    .edge {
+      fill: none;
+      stroke: var(--border);
+      transition: stroke 0.15s, stroke-width 0.15s, opacity 0.15s;
+    }
+    .edge.highlighted { stroke: var(--blue); stroke-width: 3 !important; }
+    .edge.dimmed { opacity: 0.1; }
+    
+    /* Detail Panel */
+    .detail-panel {
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      padding: 24px;
+      overflow-y: auto;
+    }
+    
+    .panel-header { margin-bottom: 24px; }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .panel-goal { font-size: 22px; font-weight: 700; color: var(--text); }
+    
+    .detail-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .detail-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .detail-icon.condition { background: var(--gray-bg); }
+    .detail-icon.consequence { background: var(--red-bg); }
+    .detail-icon.opportunity { background: var(--teal-bg); }
+    
+    .detail-title-group { flex: 1; }
+    .detail-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .detail-type { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .detail-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .metric {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--bg-card);
+      border-radius: 8px;
+    }
+    .metric-value { font-size: 18px; font-weight: 700; }
+    .metric-value.green { color: var(--green); }
+    .metric-value.amber { color: var(--amber); }
+    .metric-value.red { color: var(--red); }
+    .metric-value.teal { color: var(--teal); }
+    .metric-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+    
+    .detail-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .detail-source {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .cascade-path {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: 8px;
+    }
+    .path-step {
+      padding: 4px 10px;
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .path-step.condition { border-left: 2px solid var(--gray); }
+    .path-step.consequence { border-left: 2px solid var(--red); }
+    .path-step.opportunity { border-left: 2px solid var(--teal); }
+    .path-step.goal { border-left: 2px solid var(--blue); background: var(--blue-bg); color: var(--blue); }
+    .path-step.active { background: var(--blue-bg); color: var(--blue); }
+    .path-arrow { color: var(--text-muted); font-size: 10px; }
+    
+    .related-list { margin-top: 16px; }
+    .related-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .related-item {
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .related-item:last-child { border-bottom: none; }
+    .related-bullet { color: var(--text-muted); }
+    
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .legend-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .legend-section { margin-bottom: 12px; }
+    .legend-section:last-child { margin-bottom: 0; }
+    .legend-section-title { font-size: 9px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+    .legend-items { display: flex; flex-direction: column; gap: 6px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); }
+    .legend-shape {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .legend-circle { width: 12px; height: 12px; border-radius: 50%; }
+    .legend-diamond { width: 10px; height: 10px; transform: rotate(45deg); }
+    
+    /* Collapsed group */
+    .collapsed-group {
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .collapsed-group:hover { opacity: 0.8; }
+    .collapsed-label { font-size: 10px; fill: var(--text-muted); text-anchor: middle; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useMemo } = React;
+
+// Sample cascade with CONDITIONS and CONSEQUENCES separated
+const SAMPLE_CASCADE = {
+  goal: "open_kitchen",
+  goal_label: "Open Kitchen",
+  total_probability: 0.72,
+  worst_case_impact: "high",
+  
+  nodes: [
+    // Goal
+    {
+      id: "goal",
+      label: "Open Kitchen",
+      node_type: "goal",
+      ring: 0
+    },
+    
+    // Conditions (what the house IS)
+    {
+      id: "load_bearing",
+      label: "Load-Bearing Wall",
+      node_type: "condition",
+      ring: 1,
+      detail: {
+        description: "The wall between kitchen and living area is load-bearing, supporting the roof or upper floor structure.",
+        source_summary: "Determined by wall position and construction type"
+      }
+    },
+    {
+      id: "slab_foundation",
+      label: "Slab Foundation",
+      node_type: "condition",
+      ring: 1,
+      detail: {
+        description: "Home is built on a concrete slab foundation rather than crawl space or basement.",
+        source_summary: "Common in 1950s-1970s California construction"
+      }
+    },
+    
+    // Consequences (what HAPPENS)
+    {
+      id: "structural_beam",
+      label: "Structural Beam",
+      node_type: "consequence",
+      probability: 0.46,
+      cost_band: "high",
+      timeline_band: "medium",
+      severity: "serious",
+      frequency: 89,
+      confidence: 0.91,
+      ring: 2,
+      detail: {
+        description: "Removing the load-bearing wall requires installing a structural beam to carry the load. This involves an engineer, permits, and skilled labor.",
+        typical_cost_range: "$8k–$20k",
+        typical_timeline: "+2–4 weeks",
+        source_summary: "Based on 89 renovation reports",
+        related: [
+          "Structural engineer consultation required",
+          "Building permit required",
+          "Post-and-beam homes may have simpler paths"
+        ]
+      }
+    },
+    {
+      id: "electrical",
+      label: "Electrical Reroute",
+      node_type: "consequence",
+      probability: 0.62,
+      cost_band: "medium",
+      timeline_band: "low",
+      severity: "moderate",
+      frequency: 127,
+      confidence: 0.88,
+      ring: 2,
+      detail: {
+        description: "Removing a wall typically requires rerouting electrical circuits. Outlets, switches, and lighting need relocation.",
+        typical_cost_range: "$2k–$5k",
+        typical_timeline: "+3–5 days",
+        source_summary: "Based on 127 renovation reports",
+        related: [
+          "Panel capacity check recommended",
+          "May require permit",
+          "Consider GFCI upgrade near water"
+        ]
+      }
+    },
+    {
+      id: "plumbing_move",
+      label: "Plumbing Relocation",
+      node_type: "consequence",
+      probability: 0.31,
+      cost_band: "high",
+      timeline_band: "medium",
+      severity: "serious",
+      frequency: 64,
+      confidence: 0.84,
+      ring: 2,
+      detail: {
+        description: "If kitchen sink or dishwasher needs to move as part of the new layout, plumbing must be relocated.",
+        typical_cost_range: "$3k–$8k",
+        typical_timeline: "+1–2 weeks",
+        source_summary: "Based on 64 renovation reports",
+        related: [
+          "On slab: triggers trenching",
+          "Plumbing permit required",
+          "Consider keeping sink in place"
+        ]
+      }
+    },
+    {
+      id: "slab_trench",
+      label: "Slab Trenching",
+      node_type: "consequence",
+      probability: 0.31,
+      cost_band: "high",
+      timeline_band: "high",
+      severity: "critical",
+      frequency: 34,
+      confidence: 0.82,
+      ring: 3,
+      detail: {
+        description: "Moving plumbing on slab requires cutting and trenching concrete. Invasive, dusty, and expensive.",
+        typical_cost_range: "$5k–$15k",
+        typical_timeline: "+1–2 weeks",
+        source_summary: "Based on 34 renovation reports",
+        related: [
+          "May discover radiant heating",
+          "Concrete dust containment needed",
+          "Consider layout avoiding plumbing moves"
+        ]
+      }
+    },
+    {
+      id: "radiant_heat",
+      label: "Radiant Heat Discovery",
+      node_type: "consequence",
+      probability: 0.18,
+      cost_band: "high",
+      timeline_band: "high",
+      severity: "critical",
+      frequency: 23,
+      confidence: 0.76,
+      ring: 3,
+      collapsed: true, // Will be grouped as rare
+      detail: {
+        description: "Some slab homes have radiant heating tubing in concrete. Trenching can damage it, requiring mapping and repair.",
+        typical_cost_range: "$5k–$15k additional",
+        typical_timeline: "+1–2 weeks",
+        source_summary: "Based on 23 renovation reports",
+        related: [
+          "Thermal imaging can detect beforehand",
+          "May need to reroute heating zones",
+          "1950s-1970s homes most likely"
+        ]
+      }
+    },
+    {
+      id: "permit",
+      label: "Building Permit",
+      node_type: "consequence",
+      probability: 1.0,
+      cost_band: "low",
+      timeline_band: "medium",
+      severity: "minor",
+      frequency: 200,
+      confidence: 0.99,
+      ring: 2,
+      detail: {
+        description: "Structural work requires a building permit. Adds timeline but protects resale value.",
+        typical_cost_range: "$500–$1,500",
+        typical_timeline: "+2–6 weeks (approval)",
+        source_summary: "Building code requirement",
+        related: [
+          "Final inspection required",
+          "Documentation helps resale"
+        ]
+      }
+    },
+    
+    // Opportunity (positive outcome)
+    {
+      id: "natural_light",
+      label: "Natural Light Gain",
+      node_type: "opportunity",
+      probability: 0.85,
+      benefit_band: "high",
+      frequency: 156,
+      confidence: 0.92,
+      ring: 2,
+      detail: {
+        description: "Opening the kitchen dramatically improves natural light flow through the home. One of the most valued outcomes.",
+        typical_value: "Improved livability + resale appeal",
+        source_summary: "Based on 156 renovation reports",
+        related: [
+          "Buyers consistently cite this as top benefit",
+          "Consider window placement in new layout"
+        ]
+      }
+    },
+    {
+      id: "resale_value",
+      label: "Resale Value Increase",
+      node_type: "opportunity",
+      probability: 0.78,
+      benefit_band: "medium",
+      frequency: 89,
+      confidence: 0.85,
+      ring: 3,
+      collapsed: true,
+      detail: {
+        description: "Open floor plans consistently command higher resale values in the current market.",
+        typical_value: "+3-5% home value",
+        source_summary: "Based on market data",
+        related: [
+          "Market dependent",
+          "MCM buyers especially value this"
+        ]
+      }
+    }
+  ],
+  
+  edges: [
+    // Goal → Conditions
+    { from: "goal", to: "load_bearing", probability: 1.0, edge_type: "requires" },
+    { from: "goal", to: "slab_foundation", probability: 1.0, edge_type: "requires" },
+    
+    // Conditions → Consequences
+    { from: "load_bearing", to: "structural_beam", probability: 0.46, edge_type: "triggers" },
+    { from: "load_bearing", to: "electrical", probability: 0.62, edge_type: "triggers" },
+    { from: "goal", to: "plumbing_move", probability: 0.31, edge_type: "risks" },
+    { from: "slab_foundation", to: "slab_trench", probability: 1.0, edge_type: "triggers" },
+    { from: "plumbing_move", to: "slab_trench", probability: 1.0, edge_type: "triggers" },
+    
+    // Cascading consequences
+    { from: "structural_beam", to: "permit", probability: 1.0, edge_type: "requires" },
+    { from: "slab_trench", to: "radiant_heat", probability: 0.58, edge_type: "risks" },
+    
+    // Opportunities
+    { from: "goal", to: "natural_light", probability: 0.85, edge_type: "enables" },
+    { from: "natural_light", to: "resale_value", probability: 0.78, edge_type: "enables" }
+  ]
+};
+
+// Layout calculation
+function calculateLayout(nodes, edges, centerX, centerY) {
+  const ringRadii = { 0: 0, 1: 120, 2: 220, 3: 310 };
+  
+  // Group by ring
+  const rings = {};
+  nodes.forEach(node => {
+    const ring = node.ring;
+    if (!rings[ring]) rings[ring] = [];
+    rings[ring].push(node);
+  });
+  
+  // Position nodes
+  return nodes.map(node => {
+    if (node.ring === 0) {
+      return { ...node, x: centerX, y: centerY, size: 55 };
+    }
+    
+    const ringNodes = rings[node.ring];
+    const index = ringNodes.indexOf(node);
+    const count = ringNodes.length;
+    
+    // Spread angles - conditions and consequences mixed but spread evenly
+    // Opportunities on right side, high-cost on left
+    let startAngle, spread;
+    if (node.ring === 1) {
+      startAngle = -100;
+      spread = 200;
+    } else {
+      startAngle = -120;
+      spread = 240;
+    }
+    
+    const angle = startAngle + (spread / (count + 1)) * (index + 1);
+    const angleRad = (angle * Math.PI) / 180;
+    const radius = ringRadii[node.ring];
+    
+    const x = centerX + Math.cos(angleRad) * radius;
+    const y = centerY + Math.sin(angleRad) * radius;
+    
+    // Size based on type and probability
+    let size;
+    if (node.node_type === 'condition') {
+      size = 24; // Fixed size for conditions
+    } else if (node.node_type === 'opportunity') {
+      size = 20 + (node.probability || 0.5) * 25;
+    } else if (node.node_type === 'consequence') {
+      const impact = { low: 1, medium: 1.3, high: 1.6 }[node.cost_band] || 1;
+      size = 18 + (node.probability || 0.5) * 20 * impact;
+    } else {
+      size = 30;
+    }
+    
+    return { ...node, x, y, size: Math.min(size, 50) };
+  });
+}
+
+// Get colors
+function getNodeColors(node) {
+  if (node.node_type === 'goal') {
+    return { fill: 'var(--blue-bg)', stroke: 'var(--blue)' };
+  }
+  if (node.node_type === 'condition') {
+    return { fill: 'var(--gray-bg)', stroke: 'var(--gray)' };
+  }
+  if (node.node_type === 'opportunity') {
+    return { fill: 'var(--teal-bg)', stroke: 'var(--teal)' };
+  }
+  // Consequence
+  const colors = {
+    low: { fill: 'var(--green-bg)', stroke: 'var(--green)' },
+    medium: { fill: 'var(--amber-bg)', stroke: 'var(--amber)' },
+    high: { fill: 'var(--red-bg)', stroke: 'var(--red)' }
+  };
+  return colors[node.cost_band] || colors.medium;
+}
+
+// Get severity border width
+function getSeverityWidth(severity) {
+  return { minor: 1, moderate: 2, serious: 3, critical: 4 }[severity] || 2;
+}
+
+// Get glow based on probability
+function getGlow(probability) {
+  if (!probability) return 'none';
+  const intensity = Math.floor(probability * 15);
+  return `drop-shadow(0 0 ${intensity}px currentColor)`;
+}
+
+// Condition node (diamond)
+function ConditionNode({ node, isSelected, isDimmed, onSelect, onHover }) {
+  const colors = getNodeColors(node);
+  const size = node.size || 24;
+  
+  // Diamond points
+  const points = `${node.x},${node.y - size/1.4} ${node.x + size/1.4},${node.y} ${node.x},${node.y + size/1.4} ${node.x - size/1.4},${node.y}`;
+  
+  return (
+    <g 
+      className={`node ${isDimmed ? 'dimmed' : ''}`}
+      onClick={() => onSelect(node)}
+      onMouseEnter={() => onHover(node)}
+      onMouseLeave={() => onHover(null)}
+    >
+      {isSelected && (
+        <polygon
+          points={`${node.x},${node.y - size/1.4 - 6} ${node.x + size/1.4 + 6},${node.y} ${node.x},${node.y + size/1.4 + 6} ${node.x - size/1.4 - 6},${node.y}`}
+          fill="none"
+          stroke="var(--blue)"
+          strokeWidth="2"
+        />
+      )}
+      <polygon
+        points={points}
+        fill={colors.fill}
+        stroke={colors.stroke}
+        strokeWidth="1.5"
+      />
+      <text className="node-label" x={node.x} y={node.y + size/1.4 + 14}>
+        {node.label}
+      </text>
+    </g>
+  );
+}
+
+// Consequence/Opportunity node (circle)
+function ConsequenceNode({ node, isSelected, isDimmed, onSelect, onHover }) {
+  const colors = getNodeColors(node);
+  const borderWidth = getSeverityWidth(node.severity);
+  const opacity = 0.5 + (node.confidence || 0.5) * 0.5;
+  const glowIntensity = (node.probability || 0.5) * 12;
+  
+  return (
+    <g 
+      className={`node ${isDimmed ? 'dimmed' : ''}`}
+      onClick={() => onSelect(node)}
+      onMouseEnter={() => onHover(node)}
+      onMouseLeave={() => onHover(null)}
+      style={{ filter: `drop-shadow(0 0 ${glowIntensity}px ${colors.stroke})` }}
+    >
+      {isSelected && (
+        <circle
+          cx={node.x}
+          cy={node.y}
+          r={node.size + 6}
+          fill="none"
+          stroke="var(--blue)"
+          strokeWidth="2"
+        />
+      )}
+      <circle
+        cx={node.x}
+        cy={node.y}
+        r={node.size}
+        fill={colors.fill}
+        stroke={colors.stroke}
+        strokeWidth={borderWidth}
+        opacity={opacity}
+      />
+      <text 
+        className={`node-label ${node.size > 35 ? 'inside' : ''}`} 
+        x={node.x} 
+        y={node.size > 35 ? node.y + 4 : node.y + node.size + 14}
+      >
+        {node.label}
+      </text>
+    </g>
+  );
+}
+
+// Goal node
+function GoalNode({ node, isSelected, onSelect, onHover }) {
+  return (
+    <g 
+      className="node"
+      onClick={() => onSelect(node)}
+      onMouseEnter={() => onHover(node)}
+      onMouseLeave={() => onHover(null)}
+    >
+      <circle
+        cx={node.x}
+        cy={node.y}
+        r={node.size}
+        fill="var(--blue-bg)"
+        stroke="var(--blue)"
+        strokeWidth="3"
+      />
+      <text className="goal-label" x={node.x} y={node.y + 5} textAnchor="middle">
+        {node.label}
+      </text>
+    </g>
+  );
+}
+
+// Edge
+function Edge({ edge, nodes, isHighlighted, isDimmed }) {
+  const fromNode = nodes.find(n => n.id === edge.from);
+  const toNode = nodes.find(n => n.id === edge.to);
+  if (!fromNode || !toNode) return null;
+  
+  const weight = 1 + (edge.probability || 0.5) * 2;
+  const dashArray = edge.probability < 0.4 ? '4 3' : 'none';
+  
+  return (
+    <line
+      className={`edge ${isHighlighted ? 'highlighted' : ''} ${isDimmed ? 'dimmed' : ''}`}
+      x1={fromNode.x}
+      y1={fromNode.y}
+      x2={toNode.x}
+      y2={toNode.y}
+      strokeWidth={weight}
+      strokeDasharray={dashArray}
+    />
+  );
+}
+
+// Get path from goal to node
+function getCascadePath(nodeId, nodes, edges) {
+  const path = [nodeId];
+  let current = nodeId;
+  let safety = 0;
+  
+  while (current !== 'goal' && safety < 10) {
+    const incomingEdge = edges.find(e => e.to === current);
+    if (!incomingEdge) break;
+    path.unshift(incomingEdge.from);
+    current = incomingEdge.from;
+    safety++;
+  }
+  
+  return path.map(id => nodes.find(n => n.id === id)).filter(Boolean);
+}
+
+// Detail panel
+function DetailPanel({ cascade, selectedNode, nodes, edges }) {
+  if (!selectedNode) {
+    return (
+      <div className="detail-panel">
+        <div className="panel-header">
+          <div className="panel-title">Renovation Constellation</div>
+          <div className="panel-goal">{cascade.goal_label}</div>
+        </div>
+        
+        <div className="detail-card">
+          <div className="detail-description">
+            Click any node to explore the cascade — conditions show what the house IS, 
+            consequences show what HAPPENS, and opportunities show what you GAIN.
+          </div>
+          
+          <div className="detail-metrics">
+            <div className="metric">
+              <div className="metric-value amber">{Math.round(cascade.total_probability * 100)}%</div>
+              <div className="metric-label">Cascade Risk</div>
+            </div>
+            <div className="metric">
+              <div className="metric-value">{nodes.filter(n => n.node_type === 'consequence').length}</div>
+              <div className="metric-label">Consequences</div>
+            </div>
+            <div className="metric">
+              <div className="metric-value teal">{nodes.filter(n => n.node_type === 'opportunity').length}</div>
+              <div className="metric-label">Opportunities</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  const detail = selectedNode.detail;
+  const path = getCascadePath(selectedNode.id, nodes, edges);
+  const isCondition = selectedNode.node_type === 'condition';
+  const isOpportunity = selectedNode.node_type === 'opportunity';
+  const isGoal = selectedNode.node_type === 'goal';
+  
+  if (isGoal) {
+    return (
+      <div className="detail-panel">
+        <div className="panel-header">
+          <div className="panel-title">Your Goal</div>
+          <div className="panel-goal">{selectedNode.label}</div>
+        </div>
+        <div className="detail-card">
+          <div className="detail-description">
+            This is what you want to achieve. The constellation shows what conditions 
+            affect this goal and what consequences may follow.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="detail-panel">
+      <div className="panel-header">
+        <div className="panel-title">
+          {isCondition ? 'House Condition' : isOpportunity ? 'Opportunity' : 'Consequence'}
+        </div>
+        <div className="panel-goal">{cascade.goal_label}</div>
+      </div>
+      
+      {/* Cascade path */}
+      <div className="cascade-path">
+        {path.map((node, i) => (
+          <React.Fragment key={node.id}>
+            <span className={`path-step ${node.node_type} ${node.id === selectedNode.id ? 'active' : ''}`}>
+              {node.label}
+            </span>
+            {i < path.length - 1 && <span className="path-arrow">→</span>}
+          </React.Fragment>
+        ))}
+      </div>
+      
+      <div className="detail-card">
+        <div className="detail-header">
+          <div className={`detail-icon ${selectedNode.node_type}`}>
+            {isCondition ? '◆' : isOpportunity ? '✦' : '●'}
+          </div>
+          <div className="detail-title-group">
+            <div className="detail-title">{selectedNode.label}</div>
+            <div className="detail-type">
+              {isCondition ? 'What the house IS' : isOpportunity ? 'What you GAIN' : 'What HAPPENS'}
+            </div>
+          </div>
+        </div>
+        
+        {!isCondition && (
+          <div className="detail-metrics">
+            <div className="metric">
+              <div className={`metric-value ${selectedNode.probability > 0.5 ? 'amber' : 'green'}`}>
+                {Math.round((selectedNode.probability || 0) * 100)}%
+              </div>
+              <div className="metric-label">Probability</div>
+            </div>
+            {isOpportunity ? (
+              <div className="metric">
+                <div className="metric-value teal">{selectedNode.benefit_band || 'medium'}</div>
+                <div className="metric-label">Benefit</div>
+              </div>
+            ) : (
+              <>
+                <div className="metric">
+                  <div className={`metric-value ${selectedNode.cost_band === 'high' ? 'red' : 'amber'}`}>
+                    {selectedNode.cost_band || 'medium'}
+                  </div>
+                  <div className="metric-label">Cost Impact</div>
+                </div>
+                <div className="metric">
+                  <div className="metric-value">{selectedNode.timeline_band || 'medium'}</div>
+                  <div className="metric-label">Timeline</div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        
+        {detail && (
+          <>
+            <div className="detail-description">{detail.description}</div>
+            
+            {(detail.typical_cost_range || detail.typical_value) && (
+              <div className="detail-metrics">
+                {detail.typical_cost_range && (
+                  <div className="metric">
+                    <div className="metric-value" style={{ fontSize: 14 }}>{detail.typical_cost_range}</div>
+                    <div className="metric-label">Typical Cost</div>
+                  </div>
+                )}
+                {detail.typical_timeline && (
+                  <div className="metric">
+                    <div className="metric-value" style={{ fontSize: 14 }}>{detail.typical_timeline}</div>
+                    <div className="metric-label">Timeline</div>
+                  </div>
+                )}
+                {detail.typical_value && (
+                  <div className="metric" style={{ gridColumn: 'span 2' }}>
+                    <div className="metric-value teal" style={{ fontSize: 14 }}>{detail.typical_value}</div>
+                    <div className="metric-label">Benefit</div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="detail-source">{detail.source_summary}</div>
+            
+            {detail.related && detail.related.length > 0 && (
+              <div className="related-list">
+                <div className="related-title">Related Considerations</div>
+                {detail.related.map((item, i) => (
+                  <div key={i} className="related-item">
+                    <span className="related-bullet">•</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Main constellation
+function Constellation({ cascade }) {
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [hoveredNode, setHoveredNode] = useState(null);
+  
+  const centerX = 420;
+  const centerY = 300;
+  
+  const nodes = useMemo(() => 
+    calculateLayout(cascade.nodes, cascade.edges, centerX, centerY),
+    [cascade]
+  );
+  
+  // Highlight path
+  const highlightedPath = useMemo(() => {
+    const target = hoveredNode || selectedNode;
+    if (!target) return new Set();
+    const path = getCascadePath(target.id, nodes, cascade.edges);
+    return new Set(path.map(n => n.id));
+  }, [selectedNode, hoveredNode, nodes, cascade.edges]);
+  
+  const highlightedEdges = useMemo(() => {
+    if (highlightedPath.size === 0) return new Set();
+    return new Set(
+      cascade.edges
+        .filter(e => highlightedPath.has(e.from) && highlightedPath.has(e.to))
+        .map(e => `${e.from}-${e.to}`)
+    );
+  }, [highlightedPath, cascade.edges]);
+  
+  const hasHighlight = highlightedPath.size > 0;
+  
+  // Separate node types
+  const goalNode = nodes.find(n => n.node_type === 'goal');
+  const conditionNodes = nodes.filter(n => n.node_type === 'condition');
+  const consequenceNodes = nodes.filter(n => n.node_type === 'consequence' && !n.collapsed);
+  const opportunityNodes = nodes.filter(n => n.node_type === 'opportunity' && !n.collapsed);
+  
+  return (
+    <div className="app">
+      <div className="constellation-area">
+        <svg className="constellation-svg" viewBox="0 0 840 600" preserveAspectRatio="xMidYMid meet">
+          {/* Edges */}
+          <g>
+            {cascade.edges.map(edge => (
+              <Edge 
+                key={`${edge.from}-${edge.to}`}
+                edge={edge}
+                nodes={nodes}
+                isHighlighted={highlightedEdges.has(`${edge.from}-${edge.to}`)}
+                isDimmed={hasHighlight && !highlightedEdges.has(`${edge.from}-${edge.to}`)}
+              />
+            ))}
+          </g>
+          
+          {/* Condition nodes (diamonds) */}
+          <g>
+            {conditionNodes.map(node => (
+              <ConditionNode
+                key={node.id}
+                node={node}
+                isSelected={selectedNode?.id === node.id}
+                isDimmed={hasHighlight && !highlightedPath.has(node.id)}
+                onSelect={setSelectedNode}
+                onHover={setHoveredNode}
+              />
+            ))}
+          </g>
+          
+          {/* Consequence nodes (circles) */}
+          <g>
+            {consequenceNodes.map(node => (
+              <ConsequenceNode
+                key={node.id}
+                node={node}
+                isSelected={selectedNode?.id === node.id}
+                isDimmed={hasHighlight && !highlightedPath.has(node.id)}
+                onSelect={setSelectedNode}
+                onHover={setHoveredNode}
+              />
+            ))}
+          </g>
+          
+          {/* Opportunity nodes */}
+          <g>
+            {opportunityNodes.map(node => (
+              <ConsequenceNode
+                key={node.id}
+                node={node}
+                isSelected={selectedNode?.id === node.id}
+                isDimmed={hasHighlight && !highlightedPath.has(node.id)}
+                onSelect={setSelectedNode}
+                onHover={setHoveredNode}
+              />
+            ))}
+          </g>
+          
+          {/* Goal node */}
+          <GoalNode
+            node={goalNode}
+            isSelected={selectedNode?.id === 'goal'}
+            onSelect={setSelectedNode}
+            onHover={setHoveredNode}
+          />
+        </svg>
+        
+        <div className="legend">
+          <div className="legend-title">Constellation Guide</div>
+          
+          <div className="legend-section">
+            <div className="legend-section-title">Node Type</div>
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--blue)' }}></div></div>
+                Goal
+              </div>
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-diamond" style={{ background: 'var(--gray)' }}></div></div>
+                Condition (what IS)
+              </div>
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--red)', width: 10, height: 10 }}></div></div>
+                Consequence
+              </div>
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--teal)', width: 10, height: 10 }}></div></div>
+                Opportunity
+              </div>
+            </div>
+          </div>
+          
+          <div className="legend-section">
+            <div className="legend-section-title">Cost Impact</div>
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--green)' }}></div></div>
+                Low
+              </div>
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--amber)' }}></div></div>
+                Medium
+              </div>
+              <div className="legend-item">
+                <div className="legend-shape"><div className="legend-circle" style={{ background: 'var(--red)' }}></div></div>
+                High
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <DetailPanel 
+        cascade={cascade}
+        selectedNode={selectedNode}
+        nodes={nodes}
+        edges={cascade.edges}
+      />
+    </div>
+  );
+}
+
+function App() {
+  return <Constellation cascade={SAMPLE_CASCADE} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
