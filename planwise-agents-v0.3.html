@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlanWise Demo</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fa;
+      --bg-dark: #1a1a2e;
+      --border: #e9ecef;
+      --text: #212529;
+      --text-secondary: #6c757d;
+      --text-light: #adb5bd;
+      --accent: #4361ee;
+      --accent-light: #eef2ff;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    html, body, #root { height: 100%; width: 100%; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .scene { flex: 1; display: flex; flex-direction: column; }
+    
+    /* Header */
+    .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 700; font-size: 20px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .progress-bar { width: 200px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+    .time-display { font-size: 13px; color: var(--text-light); font-variant-numeric: tabular-nums; }
+    
+    /* Content */
+    .content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+    .content-card { max-width: 600px; width: 100%; }
+    
+    /* Caption Bar */
+    .caption-bar { 
+      padding: 20px 24px; 
+      background: var(--bg-dark); 
+      text-align: center; 
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .caption-text { 
+      font-size: 18px; 
+      color: white; 
+      max-width: 700px;
+      line-height: 1.5;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Controls */
+    .controls { 
+      padding: 12px 24px; 
+      border-top: 1px solid var(--border); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      gap: 16px;
+      background: var(--bg);
+    }
+    .control-btn {
+      padding: 10px 20px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .control-btn:hover { background: var(--bg-alt); }
+    .control-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .control-btn.primary:hover { background: #3651d4; }
+    
+    /* Scene 1: Listing */
+    .listing-hero { width: 100%; }
+    .listing-image { 
+      width: 100%; 
+      height: 360px; 
+      background: #ddd; 
+      border-radius: 16px; 
+      overflow: hidden; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-bottom: 24px; 
+      position: relative;
+    }
+    .listing-image img { width: 100%; height: 100%; object-fit: cover; }
+    .listing-badge { 
+      position: absolute; 
+      top: 16px; 
+      left: 16px; 
+      background: rgba(0,0,0,0.7); 
+      color: white; 
+      padding: 6px 12px; 
+      border-radius: 6px; 
+      font-size: 13px; 
+      font-weight: 500; 
+    }
+    .listing-details { display: flex; gap: 24px; flex-wrap: wrap; }
+    .listing-detail { display: flex; flex-direction: column; }
+    .listing-detail-label { font-size: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; }
+    .listing-detail-value { font-size: 18px; font-weight: 600; color: var(--text); }
+    .listing-question { margin-top: 32px; text-align: center; }
+    .listing-question-text { font-size: 24px; font-weight: 500; color: var(--text); }
+    
+    /* Questions */
+    .question-card { text-align: center; }
+    .question-label { font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .question-text { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 32px; line-height: 1.3; }
+    
+    .options-grid { display: flex; flex-direction: column; gap: 12px; }
+    .option-btn { 
+      padding: 16px 24px; 
+      background: var(--bg-alt); 
+      border: 2px solid var(--border); 
+      border-radius: 12px; 
+      font-size: 16px; 
+      font-weight: 500; 
+      color: var(--text); 
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .option-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+    
+    .options-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .option-chip { 
+      padding: 12px 20px; 
+      background: var(--bg-alt); 
+      border: 2px solid var(--border); 
+      border-radius: 100px; 
+      font-size: 15px; 
+      font-weight: 500; 
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .option-chip.selected { border-color: var(--accent); background: var(--accent); color: white; }
+    
+    .multi-select-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .multi-option { 
+      padding: 10px 18px; 
+      background: var(--bg-alt); 
+      border: 2px solid var(--border); 
+      border-radius: 8px; 
+      font-size: 14px; 
+      font-weight: 500; 
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .multi-option.selected { border-color: var(--accent); background: var(--accent); color: white; }
+    .multi-hint { margin-top: 16px; font-size: 13px; color: var(--text-light); }
+    
+    /* Summary */
+    .summary-card { background: var(--bg-alt); border-radius: 16px; padding: 32px; }
+    .summary-title { font-size: 14px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+    .summary-items { display: flex; flex-direction: column; gap: 16px; }
+    .summary-item { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .summary-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .summary-item-label { color: var(--text-secondary); }
+    .summary-item-value { font-weight: 600; color: var(--text); }
+    .summary-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .summary-tag { padding: 4px 12px; background: var(--accent-light); color: var(--accent); border-radius: 100px; font-size: 13px; font-weight: 500; }
+    
+    /* Property */
+    .property-entry { max-width: 500px; width: 100%; }
+    .property-input-group { margin-bottom: 24px; }
+    .property-input-label { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 8px; display: block; }
+    .property-input { 
+      width: 100%; 
+      padding: 14px 16px; 
+      border: 2px solid var(--border); 
+      border-radius: 10px; 
+      font-family: var(--font); 
+      font-size: 16px; 
+      color: var(--text);
+    }
+    
+    .auto-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .auto-field-label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; }
+    .auto-field-value { font-size: 16px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .auto-check { color: var(--success); }
+    
+    .toggle-group { margin-bottom: 20px; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .toggle-label { font-size: 16px; color: var(--text); }
+    .toggle-options { display: flex; gap: 8px; }
+    .toggle-opt { 
+      padding: 8px 16px; 
+      background: var(--bg-alt); 
+      border: 1px solid var(--border); 
+      border-radius: 6px; 
+      font-size: 14px; 
+      color: var(--text-secondary);
+      transition: all 0.12s;
+    }
+    .toggle-opt.selected { background: var(--accent); border-color: var(--accent); color: white; }
+    
+    .context-question { margin-top: 32px; padding: 24px; background: var(--bg-alt); border-radius: 12px; }
+    .context-question-text { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 16px; }
+    
+    /* Magic */
+    .magic-container { text-align: center; }
+    .magic-icons { display: flex; align-items: center; justify-content: center; gap: 24px; margin-bottom: 32px; }
+    .magic-icon { 
+      width: 80px; 
+      height: 80px; 
+      border-radius: 20px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 36px;
+    }
+    .magic-icon.buyer { background: var(--accent-light); }
+    .magic-icon.house { background: var(--success-light); }
+    .magic-icon.result { background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%); color: white; }
+    .magic-plus { font-size: 24px; color: var(--text-light); }
+    .magic-text { font-size: 20px; color: var(--text-secondary); margin-bottom: 16px; }
+    .magic-era { display: inline-flex; gap: 12px; padding: 12px 20px; background: var(--bg-alt); border-radius: 8px; font-size: 14px; color: var(--text); }
+    .magic-era span { padding: 4px 10px; background: var(--bg); border-radius: 4px; }
+    .magic-loading { margin-top: 32px; font-size: 15px; color: var(--text-light); }
+    
+    .houses-grid { 
+      display: grid; 
+      grid-template-columns: repeat(6, 1fr); 
+      gap: 8px; 
+      margin-bottom: 24px;
+    }
+    .house-cell { 
+      width: 40px; 
+      height: 40px; 
+      background: var(--bg-alt); 
+      border-radius: 6px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 16px;
+      opacity: 0;
+      animation: houseFadeIn 0.3s ease forwards;
+    }
+    @keyframes houseFadeIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 0.6; transform: scale(1); }
+    }
+    
+    /* Report */
+    .report-container { max-width: 700px; width: 100%; }
+    .report-cover { 
+      text-align: center; 
+      padding: 48px 32px; 
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); 
+      border-radius: 16px; 
+      color: white; 
+      margin-bottom: 24px;
+    }
+    .report-cover-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 8px; }
+    .report-cover-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .report-cover-subtitle { font-size: 16px; opacity: 0.8; }
+    .report-cover-for { margin-top: 24px; font-size: 14px; opacity: 0.6; }
+    .report-cover-name { font-size: 18px; font-weight: 600; }
+    
+    .report-section { background: var(--bg-alt); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .report-section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); margin-bottom: 16px; }
+    
+    .scope-badge { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-size: 18px; font-weight: 600; }
+    .scope-badge.small { background: var(--success-light); color: #065f46; }
+    .scope-badge.medium { background: var(--warning-light); color: #92400e; }
+    .scope-badge.large { background: #fee2e2; color: #991b1b; }
+    
+    .callout-box { padding: 16px; background: var(--bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+    .callout-title { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .callout-text { font-size: 14px; color: var(--text-secondary); }
+    
+    .checklist { }
+    .checklist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-box { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+    .checklist-text { font-size: 15px; color: var(--text); }
+    
+    .report-download { text-align: center; margin-top: 24px; }
+    .download-btn { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px; 
+      padding: 14px 28px; 
+      background: var(--accent); 
+      color: white; 
+      border: none; 
+      border-radius: 10px; 
+      font-family: var(--font); 
+      font-size: 16px; 
+      font-weight: 600;
+    }
+    
+    /* Scene 6 */
+    .point-container { text-align: center; }
+    .split-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+    .split-card { background: var(--bg-alt); border-radius: 12px; padding: 24px; }
+    .split-card-title { font-size: 14px; color: var(--text-light); margin-bottom: 12px; }
+    .split-card-scope { font-size: 24px; font-weight: 700; }
+    .split-card-scope.small { color: var(--success); }
+    .split-card-scope.medium { color: var(--warning); }
+    .split-card-scope.large { color: #dc2626; }
+    .point-text { font-size: 24px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+    
+    .end-card { padding: 48px; background: var(--bg-dark); border-radius: 16px; color: white; text-align: center; }
+    .end-logo { font-size: 32px; font-weight: 700; margin-bottom: 16px; }
+    .end-tagline { font-size: 18px; opacity: 0.9; margin-bottom: 24px; line-height: 1.5; }
+    .end-cta { font-size: 15px; opacity: 0.7; }
+    .end-cta a { color: white; }
+    
+    /* Start screen */
+    .start-screen { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      height: 100%;
+      text-align: center;
+    }
+    .start-logo { font-size: 48px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+    .start-subtitle { font-size: 18px; color: var(--text-secondary); margin-bottom: 48px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// Shot list with timings (in seconds)
+const SHOTS = [
+  // SCENE 1: The Setup (15 sec total)
+  { id: '1.1', scene: 1, type: 'listing-hero', duration: 3,
+    caption: "You're looking at homes." },
+  { id: '1.2', scene: 1, type: 'listing-details', duration: 5,
+    caption: "This one catches your eye — 1954 mid-century in Marin, 3 bed 2 bath." },
+  { id: '1.3', scene: 1, type: 'listing-kitchen', duration: 4,
+    caption: "How hard could it be to make this house what you need?" },
+  { id: '1.4', scene: 1, type: 'planwise-transition', duration: 3,
+    caption: "" },
+  
+  // SCENE 2: Buyer Agent (45 sec total)
+  { id: '2.1', scene: 2, type: 'welcome', duration: 4,
+    caption: "First, a few quick questions." },
+  { id: '2.2', scene: 2, type: 'q-buyer-type', duration: 5,
+    caption: "Not about budget. Just about how you live." },
+  { id: '2.3', scene: 2, type: 'q-cooking', duration: 5,
+    caption: "" },
+  { id: '2.4', scene: 2, type: 'q-hosting', duration: 5,
+    caption: "" },
+  { id: '2.5', scene: 2, type: 'q-priorities', duration: 7,
+    caption: "" },
+  { id: '2.6', scene: 2, type: 'q-comfort', duration: 6,
+    caption: "" },
+  { id: '2.7', scene: 2, type: 'q-timeline', duration: 5,
+    caption: "" },
+  { id: '2.8', scene: 2, type: 'summary', duration: 4,
+    caption: "That's it. Three minutes." },
+  { id: '2.9', scene: 2, type: 'summary-confirm', duration: 4,
+    caption: "Now PlanWise knows what matters to you." },
+  
+  // SCENE 3: Property Agent (30 sec total)
+  { id: '3.1', scene: 3, type: 'property-entry', duration: 4,
+    caption: "Basic info comes from the listing." },
+  { id: '3.2', scene: 3, type: 'property-auto', duration: 5,
+    caption: "" },
+  { id: '3.3', scene: 3, type: 'property-photos', duration: 3,
+    caption: "You add what you can see in photos." },
+  { id: '3.4', scene: 3, type: 'property-toggles', duration: 10,
+    caption: "" },
+  { id: '3.8', scene: 3, type: 'property-context', duration: 5,
+    caption: "No measuring tape. No expertise needed." },
+  { id: '3.9', scene: 3, type: 'property-continue', duration: 3,
+    caption: "" },
+  
+  // SCENE 4: The Magic (20 sec total)
+  { id: '4.1', scene: 4, type: 'magic-combine', duration: 4,
+    caption: "PlanWise combines what you want with what this house is." },
+  { id: '4.2', scene: 4, type: 'magic-not-just', duration: 3,
+    caption: "But not just this house." },
+  { id: '4.3', scene: 4, type: 'magic-hundreds', duration: 6,
+    caption: "We've analyzed hundreds of remodels on homes like this — same era, same construction, same constraints." },
+  { id: '4.4', scene: 4, type: 'magic-cascades', duration: 5,
+    caption: "We know what comes up. We know what cascades. We know what to ask before you commit." },
+  { id: '4.5', scene: 4, type: 'magic-loading', duration: 2,
+    caption: "" },
+  
+  // SCENE 5: Report (45 sec total)
+  { id: '5.1', scene: 5, type: 'report-cover', duration: 4,
+    caption: "Your personalized assessment." },
+  { id: '5.2', scene: 5, type: 'report-priorities', duration: 5,
+    caption: "Not generic — specific to you and this house." },
+  { id: '5.3', scene: 5, type: 'report-snapshot', duration: 5,
+    caption: "" },
+  { id: '5.4', scene: 5, type: 'report-scope', duration: 5,
+    caption: "For your goals, this is a Medium scope project." },
+  { id: '5.5', scene: 5, type: 'report-callout-1', duration: 5,
+    caption: "Kitchen already open — that's a win." },
+  { id: '5.6', scene: 5, type: 'report-callout-2', duration: 6,
+    caption: "Adding a third bath means slab work. That's where scope grows." },
+  { id: '5.7', scene: 5, type: 'report-prompts', duration: 5,
+    caption: "These are the questions to ask your contractor…" },
+  { id: '5.8', scene: 5, type: 'report-prompts-full', duration: 5,
+    caption: "…or your agent, before you even make an offer." },
+  { id: '5.9', scene: 5, type: 'report-download', duration: 5,
+    caption: "" },
+  
+  // SCENE 6: The Point (15 sec total)
+  { id: '6.1', scene: 6, type: 'split-profiles', duration: 3,
+    caption: "Same house." },
+  { id: '6.2', scene: 6, type: 'split-reports', duration: 4,
+    caption: "Different buyer. Different report." },
+  { id: '6.3', scene: 6, type: 'back-to-listing', duration: 3,
+    caption: "That's the point." },
+  { id: '6.4', scene: 6, type: 'end-card', duration: 5,
+    caption: "Now you know what you're getting into — before you fall in love." },
+];
+
+const TOTAL_DURATION = SHOTS.reduce((sum, s) => sum + s.duration, 0);
+
+function App() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(-1); // -1 = start screen
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef(null);
+  const shotTimerRef = useRef(null);
+  
+  const shot = currentIndex >= 0 ? SHOTS[currentIndex] : null;
+  
+  // Calculate cumulative time for progress
+  const getCumulativeTime = (index) => {
+    let time = 0;
+    for (let i = 0; i < index; i++) {
+      time += SHOTS[i].duration;
+    }
+    return time;
+  };
+  
+  const currentTime = currentIndex >= 0 ? getCumulativeTime(currentIndex) + elapsed : 0;
+  const progress = (currentTime / TOTAL_DURATION) * 100;
+  
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const startDemo = () => {
+    setCurrentIndex(0);
+    setElapsed(0);
+    setIsPlaying(true);
+  };
+  
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+  
+  const restart = () => {
+    setCurrentIndex(-1);
+    setElapsed(0);
+    setIsPlaying(false);
+  };
+  
+  // Auto-advance shots
+  useEffect(() => {
+    if (!isPlaying || currentIndex < 0) return;
+    
+    const currentShot = SHOTS[currentIndex];
+    if (!currentShot) {
+      setIsPlaying(false);
+      return;
+    }
+    
+    // Elapsed time counter
+    timerRef.current = setInterval(() => {
+      setElapsed(e => e + 0.1);
+    }, 100);
+    
+    // Shot advancement
+    shotTimerRef.current = setTimeout(() => {
+      if (currentIndex < SHOTS.length - 1) {
+        setCurrentIndex(i => i + 1);
+        setElapsed(0);
+      } else {
+        setIsPlaying(false);
+      }
+    }, currentShot.duration * 1000);
+    
+    return () => {
+      clearInterval(timerRef.current);
+      clearTimeout(shotTimerRef.current);
+    };
+  }, [isPlaying, currentIndex]);
+  
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (currentIndex < 0) {
+          startDemo();
+        } else {
+          togglePlayPause();
+        }
+      }
+      if (e.code === 'KeyR') {
+        restart();
+      }
+      if (e.code === 'ArrowRight' && !isPlaying) {
+        if (currentIndex < SHOTS.length - 1) {
+          setCurrentIndex(i => i + 1);
+          setElapsed(0);
+        }
+      }
+      if (e.code === 'ArrowLeft' && !isPlaying) {
+        if (currentIndex > 0) {
+          setCurrentIndex(i => i - 1);
+          setElapsed(0);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, currentIndex]);
+  
+  const renderContent = () => {
+    if (!shot) {
+      return (
+        <div className="start-screen">
+          <div className="start-logo">PlanWise</div>
+          <div className="start-subtitle">Press Space or click Play to begin</div>
+          <button className="control-btn primary" onClick={startDemo}>▶ Play Demo</button>
+        </div>
+      );
+    }
+    
+    switch (shot.type) {
+      // SCENE 1
+      case 'listing-hero':
+        return (
+          <div className="listing-hero">
+            <div className="listing-image">
+              <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80" alt="Home exterior" />
+              <div className="listing-badge">New Listing</div>
+            </div>
+          </div>
+        );
+      
+      case 'listing-details':
+        return (
+          <div className="listing-hero">
+            <div className="listing-image">
+              <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80" alt="Home exterior" />
+              <div className="listing-badge">$1,450,000</div>
+            </div>
+            <div className="listing-details">
+              <div className="listing-detail">
+                <span className="listing-detail-label">Year Built</span>
+                <span className="listing-detail-value">1954</span>
+              </div>
+              <div className="listing-detail">
+                <span className="listing-detail-label">Style</span>
+                <span className="listing-detail-value">Mid-Century Modern</span>
+              </div>
+              <div className="listing-detail">
+                <span className="listing-detail-label">Beds</span>
+                <span className="listing-detail-value">3</span>
+              </div>
+              <div className="listing-detail">
+                <span className="listing-detail-label">Baths</span>
+                <span className="listing-detail-value">2</span>
+              </div>
+              <div className="listing-detail">
+                <span className="listing-detail-label">Sqft</span>
+                <span className="listing-detail-value">1,850</span>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'listing-kitchen':
+        return (
+          <div className="listing-hero">
+            <div className="listing-image">
+              <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80" alt="Kitchen" />
+            </div>
+          </div>
+        );
+      
+      case 'planwise-transition':
+        return (
+          <div className="question-card">
+            <div style={{ fontSize: 48, marginBottom: 16 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 56, height: 56, background: 'var(--accent)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 24 }}>P</span>
+                <span style={{ fontWeight: 700 }}>PlanWise</span>
+              </span>
+            </div>
+          </div>
+        );
+      
+      // SCENE 2
+      case 'welcome':
+        return (
+          <div className="question-card">
+            <div className="question-text">Let's understand what matters to you.</div>
+            <div style={{ fontSize: 16, color: 'var(--text-secondary)' }}>A few quick questions — not about budget, just about how you live.</div>
+          </div>
+        );
+      
+      case 'q-buyer-type':
+        return (
+          <div className="question-card">
+            <div className="question-label">About You</div>
+            <div className="question-text">Are you a buyer or current owner?</div>
+            <div className="options-row">
+              <div className="option-chip selected">Buyer</div>
+              <div className="option-chip">Current Owner</div>
+            </div>
+          </div>
+        );
+      
+      case 'q-cooking':
+        return (
+          <div className="question-card">
+            <div className="question-label">How You Live</div>
+            <div className="question-text">How often do you cook at home?</div>
+            <div className="options-grid">
+              <div className="option-btn">Rarely — mostly takeout</div>
+              <div className="option-btn">Few times a week</div>
+              <div className="option-btn selected">Most days</div>
+              <div className="option-btn">Serious home cook</div>
+            </div>
+          </div>
+        );
+      
+      case 'q-hosting':
+        return (
+          <div className="question-card">
+            <div className="question-label">How You Live</div>
+            <div className="question-text">Do you host gatherings?</div>
+            <div className="options-grid">
+              <div className="option-btn">Rarely</div>
+              <div className="option-btn selected">Occasionally — a few times a year</div>
+              <div className="option-btn">Often — monthly or more</div>
+              <div className="option-btn">Central to how we live</div>
+            </div>
+          </div>
+        );
+      
+      case 'q-priorities':
+        return (
+          <div className="question-card">
+            <div className="question-label">What Matters</div>
+            <div className="question-text">What matters most? Pick up to three.</div>
+            <div className="multi-select-grid">
+              {['Kitchen performance', 'Open living', 'Primary suite', 'Outdoor connection', 'Home office', 'Storage', 'Architectural character', 'Low maintenance', 'Energy efficiency'].map(p => (
+                <div key={p} className={`multi-option ${['Kitchen performance', 'Open living', 'Architectural character'].includes(p) ? 'selected' : ''}`}>{p}</div>
+              ))}
+            </div>
+            <div className="multi-hint">3/3 selected</div>
+          </div>
+        );
+      
+      case 'q-comfort':
+        return (
+          <div className="question-card">
+            <div className="question-label">Comfort Level</div>
+            <div className="question-text">How much change are you comfortable with?</div>
+            <div className="options-grid">
+              <div className="option-btn">Cosmetic only — paint, fixtures</div>
+              <div className="option-btn">Kitchen/bath remodel OK</div>
+              <div className="option-btn selected">Interior structural changes OK</div>
+              <div className="option-btn">Major renovation / addition OK</div>
+            </div>
+          </div>
+        );
+      
+      case 'q-timeline':
+        return (
+          <div className="question-card">
+            <div className="question-label">Time Horizon</div>
+            <div className="question-text">How long do you plan to stay?</div>
+            <div className="options-row">
+              <div className="option-chip">1-3 years</div>
+              <div className="option-chip">3-5 years</div>
+              <div className="option-chip">5-10 years</div>
+              <div className="option-chip selected">10+ years</div>
+            </div>
+          </div>
+        );
+      
+      case 'summary':
+      case 'summary-confirm':
+        return (
+          <div className="question-card">
+            <div className="question-label">Here's what I heard</div>
+            <div className="summary-card">
+              <div className="summary-items">
+                <div className="summary-item">
+                  <span className="summary-item-label">You are</span>
+                  <span className="summary-item-value">Buyer</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-item-label">Cooking</span>
+                  <span className="summary-item-value">Most days</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-item-label">Hosting</span>
+                  <span className="summary-item-value">Occasionally</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-item-label">Priorities</span>
+                  <div className="summary-tags">
+                    <span className="summary-tag">Kitchen performance</span>
+                    <span className="summary-tag">Open living</span>
+                    <span className="summary-tag">Architectural character</span>
+                  </div>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-item-label">Comfort with changes</span>
+                  <span className="summary-item-value">Interior structural OK</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-item-label">Time horizon</span>
+                  <span className="summary-item-value">10+ years</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      // SCENE 3
+      case 'property-entry':
+        return (
+          <div className="property-entry">
+            <div className="question-text" style={{ marginBottom: 32, textAlign: 'center' }}>Let's look at a property</div>
+            <div className="property-input-group">
+              <label className="property-input-label">Paste listing URL or enter address</label>
+              <input className="property-input" type="text" defaultValue="zillow.com/homedetails/142-hillside-dr" readOnly />
+            </div>
+          </div>
+        );
+      
+      case 'property-auto':
+        return (
+          <div className="property-entry">
+            <div className="question-label" style={{ textAlign: 'center', marginBottom: 16 }}>Listing data imported</div>
+            <div className="auto-fields">
+              <div className="auto-field">
+                <div className="auto-field-label">Year Built</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> 1954</div>
+              </div>
+              <div className="auto-field">
+                <div className="auto-field-label">Style</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> Mid-Century Modern</div>
+              </div>
+              <div className="auto-field">
+                <div className="auto-field-label">Square Feet</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> 1,850</div>
+              </div>
+              <div className="auto-field">
+                <div className="auto-field-label">Beds / Baths</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> 3 / 2</div>
+              </div>
+              <div className="auto-field">
+                <div className="auto-field-label">Foundation</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> Slab</div>
+              </div>
+              <div className="auto-field">
+                <div className="auto-field-label">Last Remodel</div>
+                <div className="auto-field-value"><span className="auto-check">✓</span> 2018</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'property-photos':
+        return (
+          <div className="property-entry">
+            <div className="question-text" style={{ marginBottom: 8, textAlign: 'center', fontSize: 22 }}>What can you see in the photos?</div>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 24 }}>Quick observations — no expertise needed</div>
+          </div>
+        );
+      
+      case 'property-toggles':
+        return (
+          <div className="property-entry">
+            <div className="toggle-group">
+              <div className="toggle-row">
+                <span className="toggle-label">Kitchen open to living?</span>
+                <div className="toggle-options">
+                  <span className="toggle-opt selected">Yes</span>
+                  <span className="toggle-opt">No</span>
+                  <span className="toggle-opt">Unsure</span>
+                </div>
+              </div>
+              <div className="toggle-row">
+                <span className="toggle-label">Primary bath en suite?</span>
+                <div className="toggle-options">
+                  <span className="toggle-opt selected">Yes</span>
+                  <span className="toggle-opt">No</span>
+                  <span className="toggle-opt">Unsure</span>
+                </div>
+              </div>
+              <div className="toggle-row">
+                <span className="toggle-label">Windows look updated?</span>
+                <div className="toggle-options">
+                  <span className="toggle-opt selected">Yes</span>
+                  <span className="toggle-opt">No</span>
+                  <span className="toggle-opt">Unsure</span>
+                </div>
+              </div>
+              <div className="toggle-row">
+                <span className="toggle-label">Overall vibe?</span>
+                <div className="toggle-options">
+                  <span className="toggle-opt selected">Move-in ready</span>
+                  <span className="toggle-opt">Needs refresh</span>
+                  <span className="toggle-opt">Major work</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'property-context':
+        return (
+          <div className="property-entry">
+            <div className="context-question">
+              <div className="context-question-text">How does this one sit for you?</div>
+              <div className="options-grid">
+                <div className="option-btn">Stretch — would need to be perfect</div>
+                <div className="option-btn selected">Comfortable — room for updates</div>
+                <div className="option-btn">Investment — looking for upside</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'property-continue':
+        return (
+          <div className="property-entry" style={{ textAlign: 'center' }}>
+            <button className="control-btn primary" style={{ padding: '16px 48px', fontSize: 16 }}>Continue →</button>
+          </div>
+        );
+      
+      // SCENE 4
+      case 'magic-combine':
+        return (
+          <div className="magic-container">
+            <div className="magic-icons">
+              <div className="magic-icon buyer">👤</div>
+              <div className="magic-plus">+</div>
+              <div className="magic-icon house">🏠</div>
+            </div>
+            <div className="magic-text">What you want + What this house is</div>
+          </div>
+        );
+      
+      case 'magic-not-just':
+        return (
+          <div className="magic-container">
+            <div className="magic-icons">
+              <div className="magic-icon house">🏠</div>
+              <div style={{ fontSize: 14, color: 'var(--text-light)', margin: '0 12px' }}>→</div>
+              <div className="magic-icon house" style={{ opacity: 0.7, transform: 'scale(0.9)' }}>🏠</div>
+              <div className="magic-icon house" style={{ opacity: 0.5, transform: 'scale(0.8)' }}>🏠</div>
+              <div className="magic-icon house" style={{ opacity: 0.3, transform: 'scale(0.7)' }}>🏠</div>
+            </div>
+            <div className="magic-text">But not just this house.</div>
+          </div>
+        );
+      
+      case 'magic-hundreds':
+        return (
+          <div className="magic-container">
+            <div className="houses-grid">
+              {[...Array(18)].map((_, i) => (
+                <div key={i} className="house-cell" style={{ animationDelay: `${i * 0.05}s` }}>🏠</div>
+              ))}
+            </div>
+            <div className="magic-era">
+              <span>1954</span>
+              <span>Slab</span>
+              <span>Terra Linda</span>
+            </div>
+            <div className="magic-text" style={{ marginTop: 16 }}>Same era. Same construction. Same constraints.</div>
+          </div>
+        );
+      
+      case 'magic-cascades':
+        return (
+          <div className="magic-container">
+            <div className="magic-icons">
+              <div className="magic-icon result">✨</div>
+            </div>
+            <div style={{ maxWidth: 400, margin: '0 auto' }}>
+              <div className="magic-text" style={{ fontSize: 18, lineHeight: 1.6 }}>
+                We know what comes up.<br/>
+                We know what cascades.<br/>
+                We know what to ask before you commit.
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'magic-loading':
+        return (
+          <div className="magic-container">
+            <div className="magic-icons">
+              <div className="magic-icon result">✨</div>
+            </div>
+            <div className="magic-loading">Generating your assessment...</div>
+          </div>
+        );
+      
+      // SCENE 5
+      case 'report-cover':
+        return (
+          <div className="report-container">
+            <div className="report-cover">
+              <div className="report-cover-label">PlanWise Assessment</div>
+              <div className="report-cover-title">142 Hillside Drive</div>
+              <div className="report-cover-subtitle">Mid-Century Modern Residence</div>
+              <div className="report-cover-for">Prepared for</div>
+              <div className="report-cover-name">Sarah Chen</div>
+            </div>
+          </div>
+        );
+      
+      case 'report-priorities':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Your Priorities</div>
+              <div className="summary-tags" style={{ marginBottom: 16 }}>
+                <span className="summary-tag">Kitchen performance</span>
+                <span className="summary-tag">Open living</span>
+                <span className="summary-tag">Architectural character</span>
+              </div>
+              <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+                You cook most days, host occasionally, and plan to stay 10+ years. You're comfortable with interior structural changes.
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-snapshot':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Property Snapshot</div>
+              <div className="auto-fields" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+                <div className="auto-field">
+                  <div className="auto-field-label">Year</div>
+                  <div className="auto-field-value">1954</div>
+                </div>
+                <div className="auto-field">
+                  <div className="auto-field-label">Style</div>
+                  <div className="auto-field-value">Mid-Century Modern</div>
+                </div>
+                <div className="auto-field">
+                  <div className="auto-field-label">Foundation</div>
+                  <div className="auto-field-value">Slab</div>
+                </div>
+                <div className="auto-field">
+                  <div className="auto-field-label">Last Remodel</div>
+                  <div className="auto-field-value" style={{ color: 'var(--success)' }}>2018 ✓</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-scope':
+        return (
+          <div className="report-container">
+            <div className="report-section" style={{ textAlign: 'center' }}>
+              <div className="report-section-title">Scope Assessment</div>
+              <div style={{ marginBottom: 12 }}>For your goals, this is a</div>
+              <div className="scope-badge medium">
+                <span>⚡</span> Medium Scope Project
+              </div>
+              <div style={{ marginTop: 16, fontSize: 14, color: 'var(--text-secondary)' }}>
+                Some targeted work, not a full renovation. The 2018 remodel did the heavy lifting.
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-callout-1':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Key Considerations</div>
+              <div className="callout-box" style={{ borderLeftColor: 'var(--success)' }}>
+                <div className="callout-title">Kitchen already open — that's a win ✓</div>
+                <div className="callout-text">The 2018 remodel opened the kitchen to living. No structural work needed for your open floor plan priority.</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-callout-2':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Key Considerations</div>
+              <div className="callout-box" style={{ borderLeftColor: 'var(--success)' }}>
+                <div className="callout-title">Kitchen already open — that's a win ✓</div>
+                <div className="callout-text">The 2018 remodel opened the kitchen to living.</div>
+              </div>
+              <div className="callout-box" style={{ borderLeftColor: 'var(--warning)' }}>
+                <div className="callout-title">Adding a third bath means slab work</div>
+                <div className="callout-text">That's where scope grows. Slab plumbing is expensive — confirm if a third bath is essential to your goals.</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-prompts':
+      case 'report-prompts-full':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Discussion Prompts</div>
+              <div className="checklist">
+                <div className="checklist-item">
+                  <div className="checklist-box"></div>
+                  <div className="checklist-text">Which interior walls are load-bearing vs. partition?</div>
+                </div>
+                <div className="checklist-item">
+                  <div className="checklist-box"></div>
+                  <div className="checklist-text">Has the electrical panel been updated? Original capacity?</div>
+                </div>
+                <div className="checklist-item">
+                  <div className="checklist-box"></div>
+                  <div className="checklist-text">Any permitted work history? Unpermitted additions?</div>
+                </div>
+                <div className="checklist-item">
+                  <div className="checklist-box"></div>
+                  <div className="checklist-text">Condition of original windows if planning to keep them?</div>
+                </div>
+                <div className="checklist-item">
+                  <div className="checklist-box"></div>
+                  <div className="checklist-text">HVAC system age and type? Ductwork condition?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'report-download':
+        return (
+          <div className="report-container">
+            <div className="report-section">
+              <div className="report-section-title">Your Assessment</div>
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 16 }}>Ready to share with your agent or contractor</div>
+                <button className="download-btn">
+                  <span>↓</span> Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      
+      // SCENE 6
+      case 'split-profiles':
+        return (
+          <div className="point-container">
+            <div className="point-text">Same house.</div>
+            <div className="split-comparison">
+              <div className="split-card">
+                <div className="split-card-title">Buyer A</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Growing family, wants more space, 10+ year stay</div>
+              </div>
+              <div className="split-card">
+                <div className="split-card-title">Buyer B</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Empty nesters, downsizing, move-in ready</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'split-reports':
+        return (
+          <div className="point-container">
+            <div className="point-text">Different buyer. Different report.</div>
+            <div className="split-comparison">
+              <div className="split-card">
+                <div className="split-card-title">Buyer A</div>
+                <div className="split-card-scope large">Large Scope</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Add bath + expand primary</div>
+              </div>
+              <div className="split-card">
+                <div className="split-card-title">Buyer B</div>
+                <div className="split-card-scope small">Small Scope</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Cosmetic refresh only</div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'back-to-listing':
+        return (
+          <div className="listing-hero">
+            <div className="listing-image">
+              <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80" alt="Home exterior" />
+            </div>
+          </div>
+        );
+      
+      case 'end-card':
+        return (
+          <div className="end-card">
+            <div className="end-logo">PlanWise</div>
+            <div className="end-tagline">Know what you're getting into —<br/>before you fall in love.</div>
+            <div className="end-cta">planwisehome.com</div>
+          </div>
+        );
+      
+      default:
+        return <div>Shot: {shot.type}</div>;
+    }
+  };
+  
+  return (
+    <div className="app">
+      {currentIndex >= 0 && (
+        <div className="header">
+          <div className="logo">
+            <div className="logo-mark">P</div>
+            PlanWise
+          </div>
+          <div className="header-right">
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="time-display">{formatTime(currentTime)} / {formatTime(TOTAL_DURATION)}</div>
+          </div>
+        </div>
+      )}
+      
+      <div className="scene">
+        <div className="content">
+          <div className="content-card">
+            {renderContent()}
+          </div>
+        </div>
+      </div>
+      
+      {shot && shot.caption && (
+        <div className="caption-bar">
+          <div className="caption-text" key={currentIndex}>{shot.caption}</div>
+        </div>
+      )}
+      
+      {currentIndex >= 0 && (
+        <div className="controls">
+          <button className="control-btn" onClick={restart}>↺ Restart</button>
+          <button className="control-btn primary" onClick={togglePlayPause}>
+            {isPlaying ? '⏸ Pause' : '▶ Play'}
+          </button>
+          <span style={{ fontSize: 13, color: 'var(--text-light)' }}>Space to play/pause · R to restart</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
